@@ -3,9 +3,9 @@ import random
 import re
 import hashlib
 
-SCRAMBLE_STEPS = 5
+SCRAMBLE_STEPS = 2
 MAX_STEPS = 20
-NUM_SOLUTIONS = 3
+NUM_SOLUTIONS = 6
 
 # list of all possible moves
 movement_chart = ("U","D","R","L","F","B", 
@@ -124,6 +124,7 @@ class cube:
             combination_hash = hashlib.md5(repr(combination).encode()).hexdigest()
 
             # check if received combination hasn't been tested yet
+            # there might just be something wrong with this here function...
             if combination_hash not in self.testedSolutions:
                 repeated = 0 # resets counter
                 iterations += 1
@@ -149,9 +150,6 @@ class cube:
                 # (18*size: made-up heuristic number)
                 if size <= MAX_STEPS and repeated >= 18*size:
                     size += 1
-                elif size > MAX_STEPS:
-                    break
-
 
     #----------------#
     # CUBE MOVEMENTS #
