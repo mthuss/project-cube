@@ -1,12 +1,15 @@
 import numpy as np
 import random
 import re
+import hashlib
 
-SCRAMBLE_STEPS = 10
+SCRAMBLE_STEPS = 5
+MAX_STEPS = 10
 
 movement_chart = ["U","D","R","L","F","B", 
                   "U'","D'","R'","L'","F'","B'",
                   "U2","D2","R2","L2","F2","B2"]
+
 
 
 def rotate(face, variation):
@@ -32,43 +35,116 @@ def getSolutionfromScramble(move_list):
 
     return movement_list
 
+solvedState = np.array([
+                # front layer
+                [['A','B','C'],
+                 ['D','E','F'],
+                 ['G','H','I']],
+
+                # middle layer
+                [['J','K','L'],
+                 ['M', 0 ,'N'],
+                 ['O','P','Q']],
+                    
+                # back layer
+                [['R','S','T'],
+                 ['U','V','W'],
+                 ['X','Y','Z']]
+                ])
 
 class cube:
-    initialState = np.array([
-                    # front layer
-                    [['A','B','C'],
-                     ['D','E','F'],
-                     ['G','H','I']],
 
-                    # middle layer
-                    [['J','K','L'],
-                     ['M', 0 ,'N'],
-                     ['O','P','Q']],
-                    
-                    # back layer
-                    [['R','S','T'],
-                     ['U','V','W'],
-                     ['X','Y','Z']]
-                    ])
-
-    def __init__(self,currentstate=initialState.copy()):
+    def __init__(self,currentstate=solvedState.copy()):
         self.currentstate = currentstate
+        self.previousMovement = -1
+        self.scrambledState = None
+        self.testedSolutions = set()
 
     def scramble(self):
-        move_list = []
-        for i in range(0,SCRAMBLE_STEPS):
-            movement = random.choice(movement_chart)
+        move_list = self.getCombination(SCRAMBLE_STEPS)
+        for movement in move_list:
             self.move(movement)
-            move_list.append(movement)
 
+        self.scrambledState = self.currentstate.copy()
         return move_list
 
-
     def check(self):
-        if (self.currentstate == self.initialState).all():
+        if (self.currentstate == solvedState).all():
             print("Cube is solved!")
+            return True
         else:
             print("Cube is still scrambled!")
+            return False
+
+    def getCombination(self, size):
+        move_list = []
+        i = 0
+        while i < size:
+            while True:
+                movement = random.choice(movement_chart)
+                # prevent redundant full turns
+                if "2" in movement and movement != self.previousMovement:
+                    break
+                if "2" not in movement and movement != self.previousMovement:
+#                    if movement == self.previousMovement:
+#                        movement = move_list.pop().replace("'","") + "2"
+#                        print(f"Turned {self.previousMovement} at position {i} into {movement}")
+#                        i -= 1
+#                        if movement == move_list[-1]:
+                    if ("'" in movement and movement.replace("'","") != self.previousMovement) or ("'" not in movement and (movement + "'") != self.previousMovement):
+#                        print(f"{self.previousMovement} was undone by {movement} at position {len(move_list)}")
+                        break
+
+            self.previousMovement = movement
+            move_list.append(movement)
+            i+=1
+
+        return tuple(move_list)
+
+    def solve(self):
+        iterations = 0
+        repeated = 0 # counts how many times a repeated combination has been tested consecutively
+        size = 1
+        
+        # size = SCRAMBLE_STEPS
+        while True:
+            # reset currentstate to the original scrambled state for a new attempt
+            self.currentstate = self.scrambledState.copy()
+
+            # get new combination and compute its hash
+            #combination = self.getCombination(MAX_STEPS)
+            combination = self.getCombination(size)
+            combination_hash = hashlib.md5(repr(combination).encode()).hexdigest()
+
+            # check if received combination has already been tested
+            if combination_hash not in self.testedSolutions:
+                repeated = 0 # resets counter
+                iterations += 1
+
+                # add combination's hash to set of tested combinations
+                self.testedSolutions.add(combination_hash)
+                print("Testing ", combination)
+                print(combination_hash)
+
+                # test combination
+                for movement in combination:
+                    self.move(movement)
+
+                # tested combination actually solved the cube
+                if self.check():
+                    print("Solution: ", combination)
+                    print("Iterations: ", iterations)
+                    return
+            else:
+                repeated += 1
+                if repeated >= 18*size:
+                    size += 1
+
+                print("Repeated: ", repeated)
+
+
+
+
 
     def U(self,variation=None):
         # create up/down flipped matrix to form the upper face as seen from the front
@@ -169,13 +245,16 @@ class cube:
 rubikcube = cube()
 scramble_steps = rubikcube.scramble()
 solution_steps = getSolutionfromScramble(scramble_steps)
-print("Scrambled cube (as seen from the front): \n", rubikcube.currentstate)
+#rubikcube.testedSolutions.add(hash(tuple(solution_steps)))
+iterations = rubikcube.solve()
+print("Number of iterations: ", iterations)
+print("Scrambled cube (as seen from the front): \n", rubikcube.scrambledState)
 print("\nScrambling steps: ", scramble_steps)
 print("\nSteps for unscrambling: ", solution_steps)
+print("\n\nLength: ", len(solution_steps))
 
 print("\nNow solving...")
-for i in solution_steps:
-    rubikcube.move(i)
+#for i in solution_steps:
+#    rubikcube.move(i)
 
-rubikcube.check()
 #print("initial state: \n",rubikcube.initialState)
