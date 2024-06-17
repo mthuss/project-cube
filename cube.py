@@ -1,9 +1,8 @@
 import numpy as np
 import random
-import re
 import hashlib
 
-SCRAMBLE_STEPS = 2
+SCRAMBLE_STEPS = 4
 MAX_STEPS = 20
 NUM_SOLUTIONS = 6
 
@@ -13,12 +12,11 @@ movement_chart = ("U","D","R","L","F","B",
                   "U2","D2","R2","L2","F2","B2")
 
 def rotate(face, variation):
-    match variation:
-        case None:
+    if variation == None:
             face = np.rot90(face, k=1, axes=(1,0))
-        case "prime":
+    elif variation == "prime":
             face = np.rot90(face, k=-1, axes=(1,0))
-        case "double":
+    elif variation == "double":
             face = np.rot90(face, k=2, axes=(1,0))
 
     return face
@@ -121,13 +119,12 @@ class cube:
 
             # get new combination and compute its hash
             combination = self.getCombination(size)
+            iterations += 1
             combination_hash = hashlib.md5(repr(combination).encode()).hexdigest()
 
             # check if received combination hasn't been tested yet
-            # there might just be something wrong with this here function...
             if combination_hash not in self.testedSolutions:
                 repeated = 0 # resets counter
-                iterations += 1
 
                 # add combination's hash to set of tested combinations
                 self.testedSolutions.add(combination_hash)
@@ -203,52 +200,50 @@ class cube:
         self.currentstate[0] = rotate(self.currentstate[0], variation)
 
     def B(self, variation=None):
-        match variation:
-            case None:
-                self.currentstate[2] = np.rot90(self.currentstate[2], k=-1, axes=(1,0))
-            case "prime":
-                self.currentstate[2] = np.rot90(self.currentstate[2], k=1, axes=(1,0))
-            case "double":
-                self.currentstate[2] = np.rot90(self.currentstate[2], k=2, axes=(1,0))
+        if variation == None:
+            self.currentstate[2] = np.rot90(self.currentstate[2], k=-1, axes=(1,0))
+        elif variation == "prime":
+            self.currentstate[2] = np.rot90(self.currentstate[2], k=1, axes=(1,0))
+        elif variation == "double":
+            self.currentstate[2] = np.rot90(self.currentstate[2], k=2, axes=(1,0))
 
     def move(self, direction):
-        match direction:
-            case "U":
-                self.U()
-            case "U'":
-                self.U("prime")
-            case "U2":
-                self.U("double")
-            case "D":
-                self.D()
-            case "D'":
-                self.D("prime")
-            case "D2":
-                self.D("double")
-            case "R":
-                self.R()
-            case "R'":
-                self.R("prime")
-            case "R2":
-                self.R("double")
-            case "L":
-                self.L()
-            case "L'":
-                self.L("prime")
-            case "L2":
-                self.L("double")
-            case "F":
-                self.F()
-            case "F'":
-                self.F("prime")
-            case "F2":
-                self.F("double")
-            case "B":
-                self.B()
-            case "B'":
-                self.B("prime")
-            case "B2":
-                self.B("double")
+        if direction == "U":
+            self.U()
+        elif direction == "U'":
+            self.U("prime")
+        elif direction == "U2":
+            self.U("double")
+        elif direction == "D":
+            self.D()
+        elif direction == "D'":
+            self.D("prime")
+        elif direction == "D2":
+            self.D("double")
+        elif direction == "R":
+            self.R()
+        elif direction == "R'":
+            self.R("prime")
+        elif direction == "R2":
+            self.R("double")
+        elif direction == "L":
+            self.L()
+        elif direction == "L'":
+            self.L("prime")
+        elif direction == "L2":
+            self.L("double")
+        elif direction == "F":
+            self.F()
+        elif direction == "F'":
+            self.F("prime")
+        elif direction == "F2":
+            self.F("double")
+        elif direction == "B":
+            self.B()
+        elif direction == "B'":
+            self.B("prime")
+        elif direction == "B2":
+            self.B("double")
 
 
 rubikcube = cube()
